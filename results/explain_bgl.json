@@ -1,0 +1,74 @@
+{
+  "dataset": "bgl",
+  "seed": 42,
+  "alpha": 0.4,
+  "n_explained": 50,
+  "local_accuracy_max_error": 2.9802322443206464e-08,
+  "agreement": {
+    "spearman": 0.1236263009612956,
+    "top5_overlap": 0,
+    "top5_overlap_by_chance": 0.05555555555555555
+  },
+  "consistency": {
+    "spearman": {
+      "mean": 0.615728540192796,
+      "std": 0.2468741200416761
+    },
+    "top5_jaccard": {
+      "mean": 0.5713492063492063,
+      "std": 0.30159825585786787
+    }
+  },
+  "stability": {
+    "spearman": {
+      "mean": 0.8909521443395796,
+      "std": 0.11155039148107532
+    },
+    "top5_jaccard": {
+      "mean": 0.9304761904761903,
+      "std": 0.1542180921767888
+    }
+  },
+  "global_top_templates": [
+    {
+      "template": "APP FATAL ciod: Error reading message prefix on CioStream socket to <IP>, <*> <*> <*> <*>",
+      "mean_abs_shap": 0.09751128391889739
+    },
+    {
+      "template": "KERNEL INFO ciod: Received signal <NUM>, code=<NUM>, errno=<NUM>, address=<HEX>",
+      "mean_abs_shap": 0.04457466592295765
+    },
+    {
+      "template": "KERNEL INFO <NUM> ddr error(s) detected and corrected on rank <NUM>, symbol <NUM> over <NUM> seconds",
+      "mean_abs_shap": 0.02784886334976381
+    },
+    {
+      "template": "KERNEL INFO total of <*> ddr error(s) detected and corrected over <NUM> seconds",
+      "mean_abs_shap": 0.026378766990754827
+    },
+    {
+      "template": "KERNEL FATAL rts: kernel terminated for reason <NUM>",
+      "mean_abs_shap": 0.02423610463784934
+    },
+    {
+      "template": "KERNEL INFO <NUM> tree receiver <NUM> in re-synch state event(s) (dcr <HEX>) detected over <NUM> seconds",
+      "mean_abs_shap": 0.017612049551172185
+    },
+    {
+      "template": "KERNEL INFO <NUM> torus receiver <*> input pipe error(s) (dcr <HEX>) detected and corrected over <NUM> seconds",
+      "mean_abs_shap": 0.015935514004868197
+    },
+    {
+      "template": "KERNEL INFO Kernel detected <*> integer alignment exceptions <*> iar <HEX>, dear <HEX> <*> iar <HEX>, dear <HEX> <*> iar <HEX>, dear <HEX> <*> iar <HEX>, dear <HEX> <*> iar <HEX>, dear <HEX> <*> iar <HEX>, dear <HEX> <*> iar <HEX>, dear <HEX> <*> iar <HEX>, dear <HEX>",
+      "mean_abs_shap": 0.012117583966391293
+    },
+    {
+      "template": "KERNEL INFO <NUM> <*> <*> error(s) (dcr <HEX>) detected and corrected over <NUM> seconds",
+      "mean_abs_shap": 0.0100788469769668
+    },
+    {
+      "template": "KERNEL FATAL data <*> <*> <*>",
+      "mean_abs_shap": 0.01002423412098225
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "dataset": "hdfs",
+  "seed": 42,
+  "alpha": 0.0,
+  "n_explained": 39,
+  "local_accuracy_max_error": 5.960464488641293e-08,
+  "agreement": {
+    "spearman": 0.8437865735517937,
+    "top5_overlap": 2,
+    "top5_overlap_by_chance": 0.5555555555555556
+  },
+  "consistency": {
+    "spearman": {
+      "mean": 0.5729924690763231,
+      "std": 0.2925830174960076
+    },
+    "top5_jaccard": {
+      "mean": 0.6233211233211232,
+      "std": 0.20386561616653837
+    }
+  },
+  "stability": {
+    "spearman": {
+      "mean": 0.8631979577319873,
+      "std": 0.10450833193365124
+    },
+    "top5_jaccard": {
+      "mean": 0.8571428571428572,
+      "std": 0.1752126116205333
+    }
+  },
+  "global_top_templates": [
+    {
+      "template": "INFO dfs.DataNode$BlockReceiver: Receiving empty packet for block <BLK>",
+      "mean_abs_shap": 0.060395725416985235
+    },
+    {
+      "template": "WARN dfs.FSNamesystem: BLOCK* NameSystem.addStoredBlock: Redundant addStoredBlock request received for <BLK> on <IP> size <*>",
+      "mean_abs_shap": 0.0456695399413653
+    },
+    {
+      "template": "INFO dfs.FSNamesystem: BLOCK* NameSystem.addStoredBlock: addStoredBlock request received for <BLK> on <IP> size <*> But it does not belong to any file.",
+      "mean_abs_shap": 0.03520880864660466
+    },
+    {
+      "template": "WARN dfs.FSDataset: Unexpected error trying to delete block <BLK>. BlockInfo not found in volumeMap.",
+      "mean_abs_shap": 0.023392250823838674
+    },
+    {
+      "template": "INFO dfs.FSNamesystem: BLOCK* NameSystem.addStoredBlock: blockMap updated: <IP> is added to <BLK> size <*>",
+      "mean_abs_shap": 0.023225986620563258
+    },
+    {
+      "template": "INFO dfs.DataNode$PacketResponder: Received block <BLK> of size <*> from <IP>",
+      "mean_abs_shap": 0.020736418273574524
+    },
+    {
+      "template": "INFO dfs.DataNode$PacketResponder: PacketResponder <NUM> for block <BLK> <*>",
+      "mean_abs_shap": 0.013845841648352874
+    },
+    {
+      "template": "INFO dfs.DataNode$DataXceiver: Receiving block <BLK> src: <IP> dest: <IP>",
+      "mean_abs_shap": 0.007951482962651033
+    },
+    {
+      "template": "INFO dfs.DataNode$DataXceiver: Received block <BLK> src: <IP> dest: <IP> of size <*>",
+      "mean_abs_shap": 0.007926299254430653
+    },
+    {
+      "template": "INFO dfs.DataNode$DataTransfer: <IP>:Transmitted block <BLK> to <IP>",
+      "mean_abs_shap": 0.007481858856236117
+    }
+  ]
+}

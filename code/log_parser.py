@@ -50,12 +50,15 @@ class DrainLogParser:
             tokens (List[str]): Log tokens.
             
         Returns:
-            Dict: Node in the parse tree.
+            Dict: Node in parse tree.
         """
         node = self.root_node
         
         for depth in range(min(self.depth, len(tokens))):
             token = tokens[depth]
+            
+            if depth >= self.depth - 1:
+                break
             
             if token not in node:
                 node[token] = {}
@@ -64,34 +67,29 @@ class DrainLogParser:
         
         return node
     
-    def _calculate_similarity(self, template1: str, template2: str) -> float:
+    def _calculate_similarity(self, tokens1: List[str], tokens2: List[str]) -> float:
         """
-        Calculate similarity between two template strings.
+        Calculate token sequence similarity using simplified matching.
         
         Args:
-            template1 (str): First template.
-            template2 (str): Second template.
+            tokens1: First token sequence.
+            tokens2: Second token sequence.
             
         Returns:
-            float: Similarity score between 0 and 1.
+            Similarity score [0, 1].
         """
-        tokens1 = template1.split()
-        tokens2 = template2.split()
-        
         if len(tokens1) != len(tokens2):
-            return 0.0
+            return 0
         
-        matching_tokens = sum(1 for t1, t2 in zip(tokens1, tokens2) if t1 == t2)
-        similarity = matching_tokens / len(tokens1) if tokens1 else 0.0
-        
-        return similarity
+        match_count = sum(1 for t1, t2 in zip(tokens1, tokens2) if t1 == t2 or t2 == '<*>')
+        return match_count / len(tokens1)
     
     def parse_log(self, log_line: str) -> Tuple[int, str]:
         """
-        Parse a single log line and extract template ID.
+        Parse a single log line and return template ID and template string.
         
         Args:
-            log_line (str): Raw log line.
+            log_line (str): A single log line.
             
         Returns:
             Tuple[int, str]: Template ID and template string.
@@ -101,20 +99,41 @@ class DrainLogParser:
         if not tokens:
             return None, None
         
+        self.logs_processed += 1
+        
+        # Navigate to appropriate node
         node = self._get_node(tokens)
         
-        template_str = ' '.join(tokens)
+        # Find matching template
+        matched_template_id = None
+        max_similarity = 0
         
-        if template_str in self.template_to_id:
-            template_id = self.template_to_id[template_str]
-        else:
+        if "templates" not in node:
+            node["templates"] = {}
+        
+        for template_id, template_tokens in node["templates"].items():
+            similarity = self._calculate_similarity(tokens, template_tokens)
+            
+            if similarity >= self.similarity_threshold and similarity > max_similarity:
+                matched_template_id = template_id
+                max_similarity = similarity
+        
+        # Create new template if no match
+        if matched_template_id is None:
+            matched_template_id = self.template_counter
             self.template_counter += 1
-            template_id = self.template_counter
-            self.id_to_template[template_id] = template_str
-            self.template_to_id[template_str] = template_id
-        
-        self.logs_processed += 1
-        return template_id, template_str
+            node["templates"][matched_template_id] = tokens
+            self.id_to_template[matched_template_id] = ' '.join(tokens)
+            self.template_to_id[' '.join(tokens)] = matched_template_id
+        else:
+            # Generalise the template: positions that differ become <*>
+            template_tokens = node["templates"][matched_template_id]
+            merged = [t if t == s else '<*>' for t, s in zip(template_tokens, tokens)]
+            if merged != template_tokens:
+                node["templates"][matched_template_id] = merged
+                self.id_to_template[matched_template_id] = ' '.join(merged)
+
+        return matched_template_id, self.id_to_template[matched_template_id]
     
     def parse_file(self, log_file: Path, max_logs: int = None) -> Tuple[List[int], List[str]]:
         """
@@ -147,6 +166,32 @@ class DrainLogParser:
         logger.info(f"Parsing complete: {self.logs_processed} logs, {len(self.template_to_id)} unique templates")
         return template_ids, template_strings
     
+    def parse_from_list(self, log_lines: List[str]) -> Tuple[List[int], List[str]]:
+        """
+        Parse list of log lines (instead of reading from file).
+        
+        Args:
+            log_lines: List of log message strings
+            
+        Returns:
+            Tuple[List[int], List[str]]: Template IDs and template strings
+        """
+        template_ids = []
+        template_strings = []
+        
+        for line_num, line in enumerate(log_lines):
+            template_id, template_str = self.parse_log(line.strip())
+            
+            if template_id is not None:
+                template_ids.append(template_id)
+                template_strings.append(template_str)
+            
+            if (line_num + 1) % 500 == 0:
+                logger.info(f"Processed {line_num + 1} logs, {len(self.template_to_id)} unique templates")
+        
+        logger.info(f"Parsing complete: {self.logs_processed} logs, {len(self.template_to_id)} unique templates")
+        return template_ids, template_strings
+    
     def get_statistics(self) -> Dict:
         """
         Get parsing statistics.
@@ -159,20 +204,3 @@ class DrainLogParser:
             'unique_templates': len(self.template_to_id),
             'avg_logs_per_template': self.logs_processed / len(self.template_to_id) if self.template_to_id else 0
         }
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    
-    from config import Config
-    
-    parser = DrainLogParser(depth=Config.DRAIN_DEPTH, similarity_threshold=Config.DRAIN_SIMILARITY_THRESHOLD)
-    
-    print("Parsing HDFS sample logs...")
-    hdfs_ids, hdfs_templates = parser.parse_file(Config.HDFS_LOG_PATH)
-    print(f"HDFS: {len(hdfs_ids)} logs, {len(set(hdfs_ids))} unique templates")
-    
-    parser = DrainLogParser(depth=Config.DRAIN_DEPTH, similarity_threshold=Config.DRAIN_SIMILARITY_THRESHOLD)
-    print("\nParsing BGL sample logs...")
-    bgl_ids, bgl_templates = parser.parse_file(Config.BGL_LOG_PATH)
-    print(f"BGL: {len(bgl_ids)} logs, {len(set(bgl_ids))} unique templates")
