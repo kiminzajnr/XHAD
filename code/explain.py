@@ -21,13 +21,16 @@ with their top SHAP templates, for SREs to rate 1-5) and the figures.
 Usage:
     python explain.py hdfs
     python explain.py bgl
+    python explain.py hdfs --figures-only   # redraw figures from saved SHAP values
 Writes results/explain_<dataset>.json, results/expert_review_<dataset>.csv,
+       results/shap_<dataset>.npz,
        figures/shap_global_<dataset>.png, figures/shap_example_<dataset>.png
 """
 
 import csv
 import json
 import logging
+import re
 import sys
 import time
 
@@ -65,18 +68,43 @@ def short(template, n=60):
     return template if len(template) <= n else template[:n - 3] + "..."
 
 
-def plot_bars(values, labels, title, path):
+def figure_labels(templates, idx, width=55):
+    """
+    Template labels for a figure: the Java class is dropped
+    ('INFO dfs.DataNode$PacketResponder: Received ...' -> 'INFO Received ...'),
+    then labels are cut at the shortest width that keeps them all distinct.
+    """
+    full = [re.sub(r"^(\w+) [\w.$]+: ", r"\1 ", str(templates[i])) for i in idx]
+    for w in range(width, 121, 5):
+        cut = [short(t, w) for t in full]
+        if len(set(cut)) == len(cut):
+            return cut
+    return full
+
+
+def plot_bars(values, templates, xlabel, path):
     order = np.argsort(np.abs(values))[-10:]
-    fig, ax = plt.subplots(figsize=(9, 4.5))
+    fig, ax = plt.subplots(figsize=(10, 4.5))
     # numeric positions: two templates can shorten to the same label
     ax.barh(range(len(order)), values[order],
             color=["#c0392b" if values[i] > 0 else "#2471a3" for i in order])
-    ax.set_yticks(range(len(order)), [short(labels[i]) for i in order])
-    ax.set_xlabel("SHAP value (contribution to XHAD anomaly score)")
-    ax.set_title(title)
+    ax.set_yticks(range(len(order)), figure_labels(templates, order))
+    ax.set_xlabel(xlabel)
     fig.tight_layout()
     fig.savefig(path, dpi=200)
     plt.close(fig)
+
+
+def plot_figures(dataset, templates):
+    """Draw the paper's figures from results/shap_<dataset>.npz (first seed's SHAP values)."""
+    s = np.load(config.RESULTS_DIR / f"shap_{dataset}.npz")
+    config.FIGURES_DIR.mkdir(exist_ok=True)
+    plot_bars(np.abs(s["shap"]).mean(axis=0), templates,
+              "mean |SHAP value| over detected anomalies",
+              config.FIGURES_DIR / f"shap_global_{dataset}.png")
+    plot_bars(s["shap"][int(s["example"])], templates,
+              "SHAP value (contribution to the XHAD anomaly score)",
+              config.FIGURES_DIR / f"shap_example_{dataset}.png")
 
 
 class Shap:
@@ -182,12 +210,11 @@ def write_artefacts(dataset, d, art):
             reasons = [f"{templates[i]} ({s[i]:+.3f})" for i in np.argsort(-s)[:K]]
             w.writerow([n, int(row), f"{scores[row]:.3f}", f"{threshold:.3f}"] + reasons + ["", "", ""])
 
-    config.FIGURES_DIR.mkdir(exist_ok=True)
-    plot_bars(np.abs(sv).mean(axis=0), templates, f"{dataset.upper()}: mean |SHAP| over detected anomalies",
-              config.FIGURES_DIR / f"shap_global_{dataset}.png")
+    # the example figure shows the highest-scoring explained anomaly
     worst = int(np.argmax(art["xhad"].score(art["X"])))
-    plot_bars(sv[worst], templates, f"{dataset.upper()}: why test row {hits[worst]} was flagged",
-              config.FIGURES_DIR / f"shap_example_{dataset}.png")
+    np.savez(config.RESULTS_DIR / f"shap_{dataset}.npz",
+             test_rows=hits, shap=sv, example=worst, threshold=threshold)
+    plot_figures(dataset, templates)
     print(f"\nExample explanation (test row {hits[worst]}):")
     for i in np.argsort(-sv[worst])[:K]:
         print(f"  {sv[worst][i]:+.3f}  {short(templates[i], 90)}")
@@ -227,5 +254,8 @@ def main(dataset):
 if __name__ == "__main__":
     dataset = sys.argv[1].lower() if len(sys.argv) > 1 else ""
     if dataset not in config.DATASETS:
-        raise SystemExit("usage: python explain.py hdfs|bgl")
-    main(dataset)
+        raise SystemExit("usage: python explain.py hdfs|bgl [--figures-only]")
+    if "--figures-only" in sys.argv:
+        plot_figures(dataset, prepare(dataset)["templates"])
+    else:
+        main(dataset)
