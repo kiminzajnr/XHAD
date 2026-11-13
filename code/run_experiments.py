@@ -15,7 +15,8 @@ split exactly once. Rows reported:
 Usage:
     python run_experiments.py hdfs
     python run_experiments.py bgl
-Writes results/detection_<dataset>.json
+    python run_experiments.py bgl --random-split   # inflation check only
+Writes results/detection_<dataset>[_random].json
 """
 
 import json
@@ -94,8 +95,8 @@ def print_table(dataset, summary):
         print(f"{model:<18}{cells}")
 
 
-def main(dataset):
-    d = prepare(dataset)
+def main(dataset, shuffle):
+    d = prepare(dataset, shuffle)
     stats = describe(d)
     print(f"\n{dataset.upper()}: {stats['n_features']} features")
     for split in ("train", "val", "test"):
@@ -118,9 +119,10 @@ def main(dataset):
     print(f"\nalpha chosen per seed: {alphas}")
 
     config.RESULTS_DIR.mkdir(exist_ok=True)
-    out = config.RESULTS_DIR / f"detection_{dataset}.json"
+    out = config.RESULTS_DIR / f"detection_{dataset}{'_random' if shuffle else ''}.json"
     out.write_text(json.dumps({
         "dataset": dataset,
+        "split": "random" if shuffle else "chronological",
         "threshold_rule": config.THRESHOLD_RULE,
         "seeds": config.SEEDS,
         "data": stats,
@@ -134,5 +136,5 @@ def main(dataset):
 if __name__ == "__main__":
     dataset = sys.argv[1].lower() if len(sys.argv) > 1 else ""
     if dataset not in config.DATASETS:
-        raise SystemExit("usage: python run_experiments.py hdfs|bgl")
-    main(dataset)
+        raise SystemExit("usage: python run_experiments.py hdfs|bgl [--random-split]")
+    main(dataset, "--random-split" in sys.argv)

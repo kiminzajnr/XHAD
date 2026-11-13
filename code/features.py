@@ -33,7 +33,8 @@ _MASKS = [
     (re.compile(r'0x[0-9a-fA-F]+'), '<HEX>'),
     (re.compile(r'\b[0-9a-fA-F]{2}:[0-9a-fA-F]{6,}\b'), '<REG>'),
     (re.compile(r'\b\d+:[0-9a-fA-F]{6,}\b'), '<REG>'),
-    (re.compile(r'\b[0-9a-fA-F]{8,}\b'), '<ADDR>'),
+    # an address needs at least one hex letter; pure digits are numbers
+    (re.compile(r'\b(?=[0-9a-fA-F]*[a-fA-F])[0-9a-fA-F]{8,}\b'), '<ADDR>'),
     (re.compile(r'\b(?:[Rr]\d+-){1,}[A-Za-z0-9\-:]+\b'), '<NODE>'),
     (re.compile(r'/?\b\d+\.\d+\.\d+\.\d+(:\d+)?\b'), '<IP>'),
     (re.compile(r'/[\w./\-]{4,}'), '<PATH>'),

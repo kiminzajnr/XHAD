@@ -1,74 +1,217 @@
 {
   "dataset": "hdfs",
-  "seed": 42,
-  "alpha": 0.0,
-  "n_explained": 39,
-  "local_accuracy_max_error": 5.960464488641293e-08,
-  "agreement": {
-    "spearman": 0.8437865735517937,
-    "top5_overlap": 2,
-    "top5_overlap_by_chance": 0.5555555555555556
-  },
-  "consistency": {
-    "spearman": {
-      "mean": 0.5729924690763231,
-      "std": 0.2925830174960076
+  "seeds": [
+    42,
+    123,
+    456,
+    789,
+    999
+  ],
+  "summary": {
+    "alpha_per_seed": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "n_explained_per_seed": [
+      39,
+      40,
+      38,
+      40,
+      39
+    ],
+    "top5_overlap_by_chance": 0.5555555555555556,
+    "SHAP": {
+      "fidelity": {
+        "mean": 5.960464505294638e-08,
+        "std": 9.233911846385018e-08
+      },
+      "agreement_spearman": {
+        "mean": 0.8685817873059593,
+        "std": 0.015170881411282606
+      },
+      "agreement_top5_overlap": {
+        "mean": 2.0,
+        "std": 0.0
+      },
+      "consistency_spearman": {
+        "mean": 0.6506514709200173,
+        "std": 0.09624003726755187
+      },
+      "consistency_top5_jaccard": {
+        "mean": 0.6823471338602917,
+        "std": 0.054524609253064744
+      },
+      "stability_spearman": {
+        "mean": 0.8599666200830602,
+        "std": 0.035078680858804424
+      },
+      "stability_top5_jaccard": {
+        "mean": 0.9223568536726432,
+        "std": 0.040900704596104225
+      },
+      "seconds_per_explanation": {
+        "mean": 0.19613153581677176,
+        "std": 0.0012545530062542723
+      }
     },
-    "top5_jaccard": {
-      "mean": 0.6233211233211232,
-      "std": 0.20386561616653837
+    "LIME": {
+      "fidelity": {
+        "mean": 0.44298373991939616,
+        "std": 0.07896323536845759
+      },
+      "agreement_spearman": {
+        "mean": 0.7217845530033028,
+        "std": 0.012079898105581917
+      },
+      "agreement_top5_overlap": {
+        "mean": 1.4,
+        "std": 0.4898979485566356
+      },
+      "consistency_spearman": {
+        "mean": 0.8074549960975895,
+        "std": 0.021838849431807993
+      },
+      "consistency_top5_jaccard": {
+        "mean": 0.7430300912537755,
+        "std": 0.01717854402822128
+      },
+      "stability_spearman": {
+        "mean": 0.9154488316515959,
+        "std": 0.017728869165613424
+      },
+      "stability_top5_jaccard": {
+        "mean": 0.7636623610307821,
+        "std": 0.03149062475616271
+      },
+      "seconds_per_explanation": {
+        "mean": 0.054958799129877334,
+        "std": 0.00021241687464835848
+      }
     }
   },
-  "stability": {
-    "spearman": {
-      "mean": 0.8631979577319873,
-      "std": 0.10450833193365124
-    },
-    "top5_jaccard": {
-      "mean": 0.8571428571428572,
-      "std": 0.1752126116205333
-    }
-  },
-  "global_top_templates": [
+  "runs": [
     {
-      "template": "INFO dfs.DataNode$BlockReceiver: Receiving empty packet for block <BLK>",
-      "mean_abs_shap": 0.060395725416985235
-    },
-    {
-      "template": "WARN dfs.FSNamesystem: BLOCK* NameSystem.addStoredBlock: Redundant addStoredBlock request received for <BLK> on <IP> size <*>",
-      "mean_abs_shap": 0.0456695399413653
-    },
-    {
-      "template": "INFO dfs.FSNamesystem: BLOCK* NameSystem.addStoredBlock: addStoredBlock request received for <BLK> on <IP> size <*> But it does not belong to any file.",
-      "mean_abs_shap": 0.03520880864660466
-    },
-    {
-      "template": "WARN dfs.FSDataset: Unexpected error trying to delete block <BLK>. BlockInfo not found in volumeMap.",
-      "mean_abs_shap": 0.023392250823838674
+      "alpha": 0.0,
+      "n_explained": 39,
+      "SHAP": {
+        "fidelity": 5.960464488641293e-08,
+        "agreement_spearman": 0.8437865735517937,
+        "agreement_top5_overlap": 2,
+        "consistency_spearman": 0.5729924690763231,
+        "consistency_top5_jaccard": 0.6233211233211232,
+        "stability_spearman": 0.8631979577319873,
+        "stability_top5_jaccard": 0.8571428571428572,
+        "seconds_per_explanation": 0.1967613146855281
+      },
+      "LIME": {
+        "fidelity": 0.43076060212813855,
+        "agreement_spearman": 0.7307714488744662,
+        "agreement_top5_overlap": 2,
+        "consistency_spearman": 0.7782008533032926,
+        "consistency_top5_jaccard": 0.723137973137973,
+        "stability_spearman": 0.9126617499562977,
+        "stability_top5_jaccard": 0.7948717948717949,
+        "seconds_per_explanation": 0.05506181716918945
+      }
     },
     {
-      "template": "INFO dfs.FSNamesystem: BLOCK* NameSystem.addStoredBlock: blockMap updated: <IP> is added to <BLK> size <*>",
-      "mean_abs_shap": 0.023225986620563258
+      "alpha": 0.0,
+      "n_explained": 40,
+      "SHAP": {
+        "fidelity": 1.6653345369377348e-16,
+        "agreement_spearman": 0.876551677441227,
+        "agreement_top5_overlap": 2,
+        "consistency_spearman": 0.7810073987846892,
+        "consistency_top5_jaccard": 0.7303571428571428,
+        "stability_spearman": 0.9080204337477127,
+        "stability_top5_jaccard": 0.9607142857142856,
+        "seconds_per_explanation": 0.19512794613838197
+      },
+      "LIME": {
+        "fidelity": 0.5361324348642477,
+        "agreement_spearman": 0.7067023356489401,
+        "agreement_top5_overlap": 1,
+        "consistency_spearman": 0.7839917709955395,
+        "consistency_top5_jaccard": 0.7575396825396824,
+        "stability_spearman": 0.883969300887553,
+        "stability_top5_jaccard": 0.769047619047619,
+        "seconds_per_explanation": 0.05513532161712646
+      }
     },
     {
-      "template": "INFO dfs.DataNode$PacketResponder: Received block <BLK> of size <*> from <IP>",
-      "mean_abs_shap": 0.020736418273574524
+      "alpha": 0.0,
+      "n_explained": 38,
+      "SHAP": {
+        "fidelity": 8.881784197001252e-16,
+        "agreement_spearman": 0.8844534488573899,
+        "agreement_top5_overlap": 2,
+        "consistency_spearman": 0.6173998428908092,
+        "consistency_top5_jaccard": 0.737155388471178,
+        "stability_spearman": 0.8260109034523382,
+        "stability_top5_jaccard": 0.9298245614035089,
+        "seconds_per_explanation": 0.19770378815500358
+      },
+      "LIME": {
+        "fidelity": 0.3128146018150041,
+        "agreement_spearman": 0.707833364254411,
+        "agreement_top5_overlap": 1,
+        "consistency_spearman": 0.8235626904944077,
+        "consistency_top5_jaccard": 0.7280701754385965,
+        "stability_spearman": 0.9162183901531997,
+        "stability_top5_jaccard": 0.7296365914786969,
+        "seconds_per_explanation": 0.054605841636657715
+      }
     },
     {
-      "template": "INFO dfs.DataNode$PacketResponder: PacketResponder <NUM> for block <BLK> <*>",
-      "mean_abs_shap": 0.013845841648352874
+      "alpha": 0.0,
+      "n_explained": 40,
+      "SHAP": {
+        "fidelity": 2.220446049250313e-16,
+        "agreement_spearman": 0.8585683355975463,
+        "agreement_top5_overlap": 2,
+        "consistency_spearman": 0.7457916008208725,
+        "consistency_top5_jaccard": 0.7110119047619048,
+        "stability_spearman": 0.8868674292956638,
+        "stability_top5_jaccard": 0.9666666666666666,
+        "seconds_per_explanation": 0.19425255060195923
+      },
+      "LIME": {
+        "fidelity": 0.42181574668374305,
+        "agreement_spearman": 0.7354005201682724,
+        "agreement_top5_overlap": 1,
+        "consistency_spearman": 0.8208223737814493,
+        "consistency_top5_jaccard": 0.7383928571428571,
+        "stability_spearman": 0.9345655642534443,
+        "stability_top5_jaccard": 0.7249999999999999,
+        "seconds_per_explanation": 0.05482734441757202
+      }
     },
     {
-      "template": "INFO dfs.DataNode$DataXceiver: Receiving block <BLK> src: <IP> dest: <IP>",
-      "mean_abs_shap": 0.007951482962651033
-    },
-    {
-      "template": "INFO dfs.DataNode$DataXceiver: Received block <BLK> src: <IP> dest: <IP> of size <*>",
-      "mean_abs_shap": 0.007926299254430653
-    },
-    {
-      "template": "INFO dfs.DataNode$DataTransfer: <IP>:Transmitted block <BLK> to <IP>",
-      "mean_abs_shap": 0.007481858856236117
+      "alpha": 0.0,
+      "n_explained": 39,
+      "SHAP": {
+        "fidelity": 2.384185791015625e-07,
+        "agreement_spearman": 0.8795489010818404,
+        "agreement_top5_overlap": 2,
+        "consistency_spearman": 0.5360660430273921,
+        "consistency_top5_jaccard": 0.6098901098901098,
+        "stability_spearman": 0.8157363761875993,
+        "stability_top5_jaccard": 0.8974358974358975,
+        "seconds_per_explanation": 0.19681207950298601
+      },
+      "LIME": {
+        "fidelity": 0.5133953141058475,
+        "agreement_spearman": 0.728215096070424,
+        "agreement_top5_overlap": 2,
+        "consistency_spearman": 0.8306972919132588,
+        "consistency_top5_jaccard": 0.7680097680097681,
+        "stability_spearman": 0.9298291530074849,
+        "stability_top5_jaccard": 0.7997557997557999,
+        "seconds_per_explanation": 0.05516367080884102
+      }
     }
   ]
 }

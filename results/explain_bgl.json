@@ -1,74 +1,217 @@
 {
   "dataset": "bgl",
-  "seed": 42,
-  "alpha": 0.4,
-  "n_explained": 50,
-  "local_accuracy_max_error": 2.9802322443206464e-08,
-  "agreement": {
-    "spearman": 0.1236263009612956,
-    "top5_overlap": 0,
-    "top5_overlap_by_chance": 0.05555555555555555
-  },
-  "consistency": {
-    "spearman": {
-      "mean": 0.615728540192796,
-      "std": 0.2468741200416761
+  "seeds": [
+    42,
+    123,
+    456,
+    789,
+    999
+  ],
+  "summary": {
+    "alpha_per_seed": [
+      0.0,
+      0.4,
+      0.4,
+      0.3,
+      0.4
+    ],
+    "n_explained_per_seed": [
+      50,
+      50,
+      50,
+      50,
+      50
+    ],
+    "top5_overlap_by_chance": 0.05656108597285068,
+    "SHAP": {
+      "fidelity": {
+        "mean": 4.7683715875823654e-08,
+        "std": 3.039252465927504e-08
+      },
+      "agreement_spearman": {
+        "mean": 0.1263804769031036,
+        "std": 0.04323219667358402
+      },
+      "agreement_top5_overlap": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "consistency_spearman": {
+        "mean": 0.6462131691250779,
+        "std": 0.03380471545815857
+      },
+      "consistency_top5_jaccard": {
+        "mean": 0.5198095238095237,
+        "std": 0.057153561607605576
+      },
+      "stability_spearman": {
+        "mean": 0.8804191604224592,
+        "std": 0.016628065210967245
+      },
+      "stability_top5_jaccard": {
+        "mean": 0.901920634920635,
+        "std": 0.03250340215152148
+      },
+      "seconds_per_explanation": {
+        "mean": 0.78231019115448,
+        "std": 0.014807495184549664
+      }
     },
-    "top5_jaccard": {
-      "mean": 0.5713492063492063,
-      "std": 0.30159825585786787
+    "LIME": {
+      "fidelity": {
+        "mean": 0.9318682526859037,
+        "std": 0.046427012294156814
+      },
+      "agreement_spearman": {
+        "mean": 0.5792622329734145,
+        "std": 0.027099002534459352
+      },
+      "agreement_top5_overlap": {
+        "mean": 0.8,
+        "std": 0.4000000000000001
+      },
+      "consistency_spearman": {
+        "mean": 0.8449577507776128,
+        "std": 0.025905627667591052
+      },
+      "consistency_top5_jaccard": {
+        "mean": 0.6812857142857143,
+        "std": 0.12229305718941978
+      },
+      "stability_spearman": {
+        "mean": 0.8967758088562512,
+        "std": 0.02022870468952074
+      },
+      "stability_top5_jaccard": {
+        "mean": 0.8077777777777776,
+        "std": 0.09768682638607268
+      },
+      "seconds_per_explanation": {
+        "mean": 0.15307716941833496,
+        "std": 0.0009094542942358467
+      }
     }
   },
-  "stability": {
-    "spearman": {
-      "mean": 0.8909521443395796,
-      "std": 0.11155039148107532
-    },
-    "top5_jaccard": {
-      "mean": 0.9304761904761903,
-      "std": 0.1542180921767888
-    }
-  },
-  "global_top_templates": [
+  "runs": [
     {
-      "template": "APP FATAL ciod: Error reading message prefix on CioStream socket to <IP>, <*> <*> <*> <*>",
-      "mean_abs_shap": 0.09751128391889739
-    },
-    {
-      "template": "KERNEL INFO ciod: Received signal <NUM>, code=<NUM>, errno=<NUM>, address=<HEX>",
-      "mean_abs_shap": 0.04457466592295765
-    },
-    {
-      "template": "KERNEL INFO <NUM> ddr error(s) detected and corrected on rank <NUM>, symbol <NUM> over <NUM> seconds",
-      "mean_abs_shap": 0.02784886334976381
-    },
-    {
-      "template": "KERNEL INFO total of <*> ddr error(s) detected and corrected over <NUM> seconds",
-      "mean_abs_shap": 0.026378766990754827
+      "alpha": 0.0,
+      "n_explained": 50,
+      "SHAP": {
+        "fidelity": 2.9802322387695312e-08,
+        "agreement_spearman": 0.13504418064454266,
+        "agreement_top5_overlap": 0,
+        "consistency_spearman": 0.6261722929986333,
+        "consistency_top5_jaccard": 0.48992063492063487,
+        "stability_spearman": 0.8702731009493287,
+        "stability_top5_jaccard": 0.8450793650793651,
+        "seconds_per_explanation": 0.806846284866333
+      },
+      "LIME": {
+        "fidelity": 0.8394745690042581,
+        "agreement_spearman": 0.5936880401158026,
+        "agreement_top5_overlap": 1,
+        "consistency_spearman": 0.8568204304861616,
+        "consistency_top5_jaccard": 0.4564285714285714,
+        "stability_spearman": 0.9024236263590474,
+        "stability_top5_jaccard": 0.6322222222222222,
+        "seconds_per_explanation": 0.1541355609893799
+      }
     },
     {
-      "template": "KERNEL FATAL rts: kernel terminated for reason <NUM>",
-      "mean_abs_shap": 0.02423610463784934
+      "alpha": 0.4,
+      "n_explained": 50,
+      "SHAP": {
+        "fidelity": 5.960464483090178e-08,
+        "agreement_spearman": 0.0853100834263179,
+        "agreement_top5_overlap": 0,
+        "consistency_spearman": 0.6454267896134089,
+        "consistency_top5_jaccard": 0.4726190476190475,
+        "stability_spearman": 0.8630304068029134,
+        "stability_top5_jaccard": 0.8935714285714286,
+        "seconds_per_explanation": 0.7653460359573364
+      },
+      "LIME": {
+        "fidelity": 0.9622073577955246,
+        "agreement_spearman": 0.5425634724672231,
+        "agreement_top5_overlap": 0,
+        "consistency_spearman": 0.8589058424550027,
+        "consistency_top5_jaccard": 0.7161904761904762,
+        "stability_spearman": 0.9228024843902741,
+        "stability_top5_jaccard": 0.8276190476190476,
+        "seconds_per_explanation": 0.1527591562271118
+      }
     },
     {
-      "template": "KERNEL INFO <NUM> tree receiver <NUM> in re-synch state event(s) (dcr <HEX>) detected over <NUM> seconds",
-      "mean_abs_shap": 0.017612049551172185
+      "alpha": 0.4,
+      "n_explained": 50,
+      "SHAP": {
+        "fidelity": 5.960464488641293e-08,
+        "agreement_spearman": 0.11363105579047267,
+        "agreement_top5_overlap": 0,
+        "consistency_spearman": 0.5947414924310256,
+        "consistency_top5_jaccard": 0.46230158730158727,
+        "stability_spearman": 0.8709895013535661,
+        "stability_top5_jaccard": 0.9202380952380951,
+        "seconds_per_explanation": 0.784086275100708
+      },
+      "LIME": {
+        "fidelity": 0.9490005650084348,
+        "agreement_spearman": 0.5657915879450387,
+        "agreement_top5_overlap": 1,
+        "consistency_spearman": 0.8440797628906757,
+        "consistency_top5_jaccard": 0.8,
+        "stability_spearman": 0.9014487529399186,
+        "stability_top5_jaccard": 0.9266666666666665,
+        "seconds_per_explanation": 0.1522972774505615
+      }
     },
     {
-      "template": "KERNEL INFO <NUM> torus receiver <*> input pipe error(s) (dcr <HEX>) detected and corrected over <NUM> seconds",
-      "mean_abs_shap": 0.015935514004868197
+      "alpha": 0.3,
+      "n_explained": 50,
+      "SHAP": {
+        "fidelity": 8.940696716308594e-08,
+        "agreement_spearman": 0.09238472102232351,
+        "agreement_top5_overlap": 0,
+        "consistency_spearman": 0.6872940406436377,
+        "consistency_top5_jaccard": 0.5665079365079364,
+        "stability_spearman": 0.8887760096765578,
+        "stability_top5_jaccard": 0.9088095238095238,
+        "seconds_per_explanation": 0.7865709400177002
+      },
+      "LIME": {
+        "fidelity": 0.9513492732556991,
+        "agreement_spearman": 0.5716721384170576,
+        "agreement_top5_overlap": 1,
+        "consistency_spearman": 0.8692924635204851,
+        "consistency_top5_jaccard": 0.6604761904761903,
+        "stability_spearman": 0.8966895484667688,
+        "stability_top5_jaccard": 0.797142857142857,
+        "seconds_per_explanation": 0.15417051792144776
+      }
     },
     {
-      "template": "KERNEL INFO Kernel detected <*> integer alignment exceptions <*> iar <HEX>, dear <HEX> <*> iar <HEX>, dear <HEX> <*> iar <HEX>, dear <HEX> <*> iar <HEX>, dear <HEX> <*> iar <HEX>, dear <HEX> <*> iar <HEX>, dear <HEX> <*> iar <HEX>, dear <HEX> <*> iar <HEX>, dear <HEX>",
-      "mean_abs_shap": 0.012117583966391293
-    },
-    {
-      "template": "KERNEL INFO <NUM> <*> <*> error(s) (dcr <HEX>) detected and corrected over <NUM> seconds",
-      "mean_abs_shap": 0.0100788469769668
-    },
-    {
-      "template": "KERNEL FATAL data <*> <*> <*>",
-      "mean_abs_shap": 0.01002423412098225
+      "alpha": 0.4,
+      "n_explained": 50,
+      "SHAP": {
+        "fidelity": 1.1102230246251565e-16,
+        "agreement_spearman": 0.20553234363186135,
+        "agreement_top5_overlap": 0,
+        "consistency_spearman": 0.6774312299386837,
+        "consistency_top5_jaccard": 0.6076984126984126,
+        "stability_spearman": 0.9090267833299299,
+        "stability_top5_jaccard": 0.9419047619047619,
+        "seconds_per_explanation": 0.7687014198303223
+      },
+      "LIME": {
+        "fidelity": 0.9573094983656024,
+        "agreement_spearman": 0.6225959259219512,
+        "agreement_top5_overlap": 1,
+        "consistency_spearman": 0.7956902545357386,
+        "consistency_top5_jaccard": 0.7733333333333333,
+        "stability_spearman": 0.860514632125247,
+        "stability_top5_jaccard": 0.8552380952380951,
+        "seconds_per_explanation": 0.15202333450317382
+      }
     }
   ]
 }

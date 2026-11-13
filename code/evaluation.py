@@ -18,25 +18,46 @@ import config
 import features
 
 
-def prepare(dataset):
-    """Load features, split chronologically and scale. Returns a dict."""
+def load(dataset, shuffle=False):
+    """
+    Features in time order, log1p-transformed (tames bursts: a failing node
+    can repeat one line 20 times). shuffle=True destroys the time order; it
+    exists only to measure how much a random split inflates results.
+    """
     X, y, templates = features.load(dataset)
-    n = len(y)
-    a = int(n * config.TRAIN_FRAC)
-    b = int(n * (config.TRAIN_FRAC + config.VAL_FRAC))
+    if shuffle:
+        order = np.random.default_rng(config.SEEDS[0]).permutation(len(y))
+        X, y = X[order], y[order]
+    return np.log1p(X), y, templates
 
-    # log1p tames bursty counts (a failing node can repeat one line 20 times)
-    X = np.log1p(X)
-    normal_train = X[:a][y[:a] == 0]
+
+def split(X, y, templates, train, val, test):
+    """Slice train/val/test (index slices) and scale on normal training rows."""
+    normal_train = X[train][y[train] == 0]
     scaler = MinMaxScaler().fit(normal_train)
-
     return dict(
         templates=templates,
         X_train=scaler.transform(normal_train),
-        X_train_all=scaler.transform(X[:a]), y_train_all=y[:a],
-        X_val=scaler.transform(X[a:b]), y_val=y[a:b],
-        X_test=scaler.transform(X[b:]), y_test=y[b:],
+        X_train_all=scaler.transform(X[train]), y_train_all=y[train],
+        X_val=scaler.transform(X[val]), y_val=y[val],
+        X_test=scaler.transform(X[test]), y_test=y[test],
     )
+
+
+def prepare(dataset, shuffle=False):
+    """The main protocol: oldest 60% train, next 20% val, newest 20% test."""
+    X, y, templates = load(dataset, shuffle)
+    n = len(y)
+    a = int(n * config.TRAIN_FRAC)
+    b = int(n * (config.TRAIN_FRAC + config.VAL_FRAC))
+    return split(X, y, templates, slice(0, a), slice(a, b), slice(b, n))
+
+
+def unseen_share(d):
+    """Share of normal test rows containing a template absent from normal training rows."""
+    absent = d["X_train"].max(axis=0) == d["X_train"].min(axis=0)
+    normal = d["X_test"][d["y_test"] == 0]
+    return float((normal[:, absent] > 0).any(axis=1).mean())
 
 
 def describe(d):

@@ -24,8 +24,10 @@ raw log ──► features.py ──► run_experiments.py ──► results/det
 | `code/features.py` | Builds one row per HDFS block / BGL 20-line window: template counts, kept in time order. |
 | `code/evaluation.py` | Chronological 60/20/20 split, scaling, threshold choice, metrics. |
 | `code/models.py` | Isolation Forest, autoencoder, PCA, One-Class SVM and the XHAD ensemble. |
-| `code/run_experiments.py` | Detection experiment and ablations. |
-| `code/explain.py` | SHAP explanations and their quality measures. |
+| `code/run_experiments.py` | Detection experiment and ablations (`--random-split` for the inflation check). |
+| `code/run_drift.py` | Periodic retraining over the test period, at several frequencies. |
+| `code/explain.py` | SHAP vs. LIME explanations of XHAD and their quality measures. |
+| `run_all.sh` | Reproduces every result in the paper. |
 
 ## Protocol
 
@@ -43,11 +45,17 @@ Put `HDFS.log`, `preprocessed/anomaly_label.csv` and `BGL.log` (from
 [Loghub](https://github.com/logpai/loghub)) in `data/`, then:
 
 ```bash
+./run_all.sh                     # everything, a few hours on a laptop CPU
+```
+
+or step by step:
+
+```bash
 cd code
 python features.py hdfs          # once, ~5 min
 python features.py bgl           # once, ~1 min
 python run_experiments.py hdfs   # detection results
-python run_experiments.py bgl
-python explain.py hdfs           # SHAP explanations
-python explain.py bgl
+python run_experiments.py bgl --random-split
+python explain.py hdfs           # SHAP vs. LIME explanations
+python run_drift.py bgl          # periodic retraining
 ```

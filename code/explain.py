@@ -1,19 +1,22 @@
 """
-SHAP explanations for XHAD and the measurements of their quality.
+Explanations for XHAD and the measurements of their quality, SHAP vs. LIME.
 
-KernelSHAP explains the ensemble score S(x) itself (not one component),
-for anomalies XHAD correctly detects on the test split. Measured:
+Both methods explain the ensemble score S(x) itself (not one component),
+for the same anomalies XHAD correctly detects on the test split, for every
+seed. Measured per method:
 
-    local accuracy  - base value + sum of SHAP values reproduces S(x)
-    agreement       - do the templates SHAP ranks highest match those that
+    local accuracy  - SHAP: base value + sum of SHAP values vs. S(x)
+                      LIME: R^2 of its local linear fit
+    agreement       - do the templates ranked highest match those that
                       separate anomalous from normal rows in the training
                       labels? (Spearman rho, top-k overlap vs. chance)
     consistency     - do similar anomalies get similar explanations?
                       (each anomaly vs. its nearest other anomaly)
     stability       - does the explanation survive a +/-1% input perturbation?
+    seconds         - time to explain one anomaly
 
-Also writes the expert-review sheet: the explained anomalies with their
-top templates, ready for SREs to rate on a 1-5 scale.
+The first seed also writes the expert-review sheet (the explained anomalies
+with their top SHAP templates, for SREs to rate 1-5) and the figures.
 
 Usage:
     python explain.py hdfs
@@ -26,12 +29,14 @@ import csv
 import json
 import logging
 import sys
+import time
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import shap
+from lime.lime_tabular import LimeTabularExplainer
 from scipy.stats import spearmanr
 
 import config
@@ -40,6 +45,7 @@ from models import XHAD
 
 logging.getLogger("shap").setLevel(logging.ERROR)
 K = config.SHAP_TOP_K
+LIME_SAMPLES = 5000
 
 
 def top_k(row):
@@ -50,13 +56,9 @@ def jaccard(a, b):
     return len(a & b) / len(a | b)
 
 
-def pair_scores(sv_a, sv_b):
+def pair_scores(e_a, e_b):
     """Spearman rho and top-k Jaccard between two explanations."""
-    return spearmanr(sv_a, sv_b)[0], jaccard(top_k(sv_a), top_k(sv_b))
-
-
-def mean_std(values):
-    return {"mean": float(np.nanmean(values)), "std": float(np.nanstd(values))}
+    return spearmanr(e_a, e_b)[0], jaccard(top_k(e_a), top_k(e_b))
 
 
 def short(template, n=60):
@@ -77,11 +79,47 @@ def plot_bars(values, labels, title, path):
     plt.close(fig)
 
 
-def main(dataset):
-    d = prepare(dataset)
-    templates = d["templates"]
-    seed = config.SEEDS[0]
+class Shap:
+    def __init__(self, xhad, d, seed):
+        self.explainer = shap.KernelExplainer(
+            xhad.score, shap.kmeans(d["X_train"], config.SHAP_BACKGROUND))
+        self.score = xhad.score
 
+    def __call__(self, X):
+        return np.asarray(self.explainer.shap_values(X, nsamples=config.SHAP_NSAMPLES, silent=True))
+
+    def fidelity(self, X, e):
+        """Largest gap between base + sum(SHAP) and the score (0 = exact)."""
+        base = float(np.ravel(self.explainer.expected_value)[0])
+        return float(np.abs(base + e.sum(axis=1) - self.score(X)).max())
+
+
+class Lime:
+    def __init__(self, xhad, d, seed):
+        rng = np.random.default_rng(seed)
+        sample = d["X_train"][rng.choice(len(d["X_train"]), min(5000, len(d["X_train"])), replace=False)]
+        # library defaults (quartile discretisation), the usual reference setting
+        self.explainer = LimeTabularExplainer(sample, mode="regression", random_state=seed)
+        self.score = xhad.score
+        self.r2 = []
+
+    def __call__(self, X):
+        out = np.zeros_like(X)
+        for i, x in enumerate(X):
+            exp = self.explainer.explain_instance(x, self.score, num_features=X.shape[1],
+                                                  num_samples=LIME_SAMPLES)
+            for j, w in next(iter(exp.local_exp.values())):
+                out[i, j] = w
+            self.r2.append(exp.score)
+        return out
+
+    def fidelity(self, X, e):
+        """Mean R^2 of LIME's local linear fit (1 = perfect)."""
+        return float(np.mean(self.r2))
+
+
+def explain_seed(dataset, d, seed):
+    """Explain the same detected anomalies with SHAP and LIME. Returns metrics + artefacts."""
     xhad = XHAD(dataset, seed).fit(d["X_train"], d["X_train_all"])
     xhad.tune(d["X_val"], d["y_val"])
     scores = xhad.score(d["X_test"])
@@ -94,64 +132,45 @@ def main(dataset):
     if len(hits) > config.SHAP_N_EXPLAIN:
         hits = np.sort(rng.choice(hits, config.SHAP_N_EXPLAIN, replace=False))
     X = d["X_test"][hits]
-    print(f"{dataset.upper()}: alpha={xhad.alpha}, explaining {len(hits)} distinct detected anomalies")
+    X_pert = X * (1 + rng.uniform(-config.SHAP_PERTURB, config.SHAP_PERTURB, X.shape))
 
-    background = shap.kmeans(d["X_train"], config.SHAP_BACKGROUND)
-    explainer = shap.KernelExplainer(xhad.score, background)
-    explain = lambda rows: np.asarray(explainer.shap_values(
-        rows, nsamples=config.SHAP_NSAMPLES, silent=True))
-
-    sv = explain(X)
-    base = float(np.ravel(explainer.expected_value)[0])
-    local_err = np.abs(base + sv.sum(axis=1) - xhad.score(X))
-
-    # agreement with what the labels say separates the classes (training data only)
+    # what the training labels say separates the classes
     y_tr = d["y_train_all"]
     signal = np.abs(d["X_train_all"][y_tr == 1].mean(0) - d["X_train_all"][y_tr == 0].mean(0))
-    importance = np.abs(sv).mean(axis=0)
-    overlap = len(top_k(importance) & top_k(signal))
-    chance = K * K / X.shape[1]
-
-    # consistency: each anomaly vs. its nearest other anomaly
-    consistency = []
+    nearest = []
     if len(X) > 1:
         dist = np.linalg.norm(X[:, None] - X[None], axis=2)
         np.fill_diagonal(dist, np.inf)
-        consistency = [pair_scores(sv[i], sv[j]) for i, j in enumerate(dist.argmin(1))]
+        nearest = list(enumerate(dist.argmin(1)))
 
-    # stability: re-explain after scaling every feature by up to +/-1%
-    X_pert = X * (1 + rng.uniform(-config.SHAP_PERTURB, config.SHAP_PERTURB, X.shape))
-    sv_pert = explain(X_pert)
-    stability = [pair_scores(a, b) for a, b in zip(sv, sv_pert)]
+    out = {"alpha": xhad.alpha, "n_explained": int(len(hits))}
+    explanations = {}
+    for name, method in (("SHAP", Shap), ("LIME", Lime)):
+        explain = method(xhad, d, seed)
+        start = time.time()
+        e = explain(X)
+        seconds = (time.time() - start) / len(X)
+        e_pert = explain(X_pert)
+        importance = np.abs(e).mean(axis=0)
+        consistency = [pair_scores(e[i], e[j]) for i, j in nearest]
+        stability = [pair_scores(a, b) for a, b in zip(e, e_pert)]
+        out[name] = {
+            "fidelity": explain.fidelity(X, e),
+            "agreement_spearman": float(spearmanr(importance, signal)[0]),
+            f"agreement_top{K}_overlap": len(top_k(importance) & top_k(signal)),
+            "consistency_spearman": float(np.nanmean([c[0] for c in consistency])),
+            f"consistency_top{K}_jaccard": float(np.mean([c[1] for c in consistency])),
+            "stability_spearman": float(np.nanmean([s[0] for s in stability])),
+            f"stability_top{K}_jaccard": float(np.mean([s[1] for s in stability])),
+            "seconds_per_explanation": seconds,
+        }
+        explanations[name] = e
+    return out, dict(xhad=xhad, hits=hits, X=X, scores=scores, shap=explanations["SHAP"])
 
-    result = {
-        "dataset": dataset,
-        "seed": seed,
-        "alpha": xhad.alpha,
-        "n_explained": int(len(hits)),
-        "local_accuracy_max_error": float(local_err.max()),
-        "agreement": {
-            "spearman": float(spearmanr(importance, signal)[0]),
-            f"top{K}_overlap": overlap,
-            f"top{K}_overlap_by_chance": chance,
-        },
-        "consistency": {
-            "spearman": mean_std([c[0] for c in consistency]),
-            f"top{K}_jaccard": mean_std([c[1] for c in consistency]),
-        },
-        "stability": {
-            "spearman": mean_std([s[0] for s in stability]),
-            f"top{K}_jaccard": mean_std([s[1] for s in stability]),
-        },
-        "global_top_templates": [
-            {"template": str(templates[i]), "mean_abs_shap": float(importance[i])}
-            for i in np.argsort(-importance)[:10]
-        ],
-    }
 
-    config.RESULTS_DIR.mkdir(exist_ok=True)
-    out = config.RESULTS_DIR / f"explain_{dataset}.json"
-    out.write_text(json.dumps(result, indent=2))
+def write_artefacts(dataset, d, art):
+    templates, hits, sv, scores = d["templates"], art["hits"], art["shap"], art["scores"]
+    threshold = art["xhad"].threshold
 
     sheet = config.RESULTS_DIR / f"expert_review_{dataset}.csv"
     with open(sheet, "w", newline="") as f:
@@ -161,26 +180,48 @@ def main(dataset):
                    + ["makes_sense_1to5", "actionable_1to5", "comment"])
         for n, (row, s) in enumerate(zip(hits, sv), 1):
             reasons = [f"{templates[i]} ({s[i]:+.3f})" for i in np.argsort(-s)[:K]]
-            w.writerow([n, int(row), f"{scores[row]:.3f}", f"{xhad.threshold:.3f}"] + reasons + ["", "", ""])
+            w.writerow([n, int(row), f"{scores[row]:.3f}", f"{threshold:.3f}"] + reasons + ["", "", ""])
 
     config.FIGURES_DIR.mkdir(exist_ok=True)
-    plot_bars(importance, templates, f"{dataset.upper()}: mean |SHAP| over detected anomalies",
+    plot_bars(np.abs(sv).mean(axis=0), templates, f"{dataset.upper()}: mean |SHAP| over detected anomalies",
               config.FIGURES_DIR / f"shap_global_{dataset}.png")
-    worst = int(np.argmax(xhad.score(X)))
+    worst = int(np.argmax(art["xhad"].score(art["X"])))
     plot_bars(sv[worst], templates, f"{dataset.upper()}: why test row {hits[worst]} was flagged",
               config.FIGURES_DIR / f"shap_example_{dataset}.png")
-
-    print(f"\nlocal accuracy max error : {result['local_accuracy_max_error']:.2e}")
-    print(f"agreement   Spearman     : {result['agreement']['spearman']:+.3f}   "
-          f"top-{K} overlap {overlap}/{K} (chance {chance:.2f})")
-    for name in ("consistency", "stability"):
-        r = result[name]
-        print(f"{name:<12}Spearman     : {r['spearman']['mean']:+.3f} +/- {r['spearman']['std']:.3f}   "
-              f"top-{K} Jaccard {r[f'top{K}_jaccard']['mean']:.3f}")
     print(f"\nExample explanation (test row {hits[worst]}):")
     for i in np.argsort(-sv[worst])[:K]:
         print(f"  {sv[worst][i]:+.3f}  {short(templates[i], 90)}")
-    print(f"\nSaved {out}, {sheet} and figures in {config.FIGURES_DIR}")
+
+
+def main(dataset):
+    d = prepare(dataset)
+    runs = []
+    for n, seed in enumerate(config.SEEDS):
+        print(f"seed {seed} ...", flush=True)
+        result, art = explain_seed(dataset, d, seed)
+        runs.append(result)
+        if n == 0:
+            write_artefacts(dataset, d, art)
+
+    summary = {"alpha_per_seed": [r["alpha"] for r in runs],
+               "n_explained_per_seed": [r["n_explained"] for r in runs],
+               f"top{K}_overlap_by_chance": K * K / d["X_train"].shape[1]}
+    for name in ("SHAP", "LIME"):
+        summary[name] = {key: {"mean": float(np.mean([r[name][key] for r in runs])),
+                               "std": float(np.std([r[name][key] for r in runs]))}
+                         for key in runs[0][name]}
+
+    print(f"\n{dataset.upper()} - explanation quality, mean +/- std over {len(runs)} seeds\n")
+    print(f"{'measure':<28}{'SHAP':>20}{'LIME':>20}")
+    for key in runs[0]["SHAP"]:
+        print(f"{key:<28}" + "".join(f"{summary[m][key]['mean']:>12.3g} +/- {summary[m][key]['std']:<5.2g}"
+                                     for m in ("SHAP", "LIME")))
+
+    config.RESULTS_DIR.mkdir(exist_ok=True)
+    out = config.RESULTS_DIR / f"explain_{dataset}.json"
+    out.write_text(json.dumps({"dataset": dataset, "seeds": config.SEEDS,
+                               "summary": summary, "runs": runs}, indent=2))
+    print(f"\nSaved {out}")
 
 
 if __name__ == "__main__":

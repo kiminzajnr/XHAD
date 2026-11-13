@@ -48,6 +48,13 @@ ALPHAS = [round(0.1 * i, 1) for i in range(11)]
 #   "youden" - maximise TPR - FPR (what the proposal describes)
 THRESHOLD_RULE = "f1"
 
+# --- Drift experiment (run_drift.py) ----------------------------------------
+# The test period (newest 20%) is cut into equal chunks; before each chunk
+# the detectors are retrained on earlier rows, and the chunk just before it
+# picks alpha and the threshold. Several retraining frequencies are reported.
+DRIFT_CHUNKS = [5, 10, 20]
+DRIFT_WINDOW_FRAC = 0.2     # sliding scheme: training rows kept
+
 # --- SHAP explanations ------------------------------------------------------
 SHAP_BACKGROUND = 50        # k-means summary of normal training rows
 SHAP_NSAMPLES = "auto"      # KernelSHAP coalitions per explanation
