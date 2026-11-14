@@ -14,6 +14,8 @@ seed. Measured per method:
                       (each anomaly vs. its nearest other anomaly)
     stability       - does the explanation survive a +/-1% input perturbation?
     seconds         - time to explain one anomaly
+    new templates   - share of attribution on templates never seen in normal
+                      training data (explains low agreement under drift)
 
 The first seed also writes the expert-review sheet (the explained anomalies
 with their top SHAP templates, for SREs to rate 1-5) and the figures.
@@ -165,6 +167,9 @@ def explain_seed(dataset, d, seed):
     # what the training labels say separates the classes
     y_tr = d["y_train_all"]
     signal = np.abs(d["X_train_all"][y_tr == 1].mean(0) - d["X_train_all"][y_tr == 0].mean(0))
+    # templates never seen in normal training data (constant there); under drift
+    # these drive test anomalies, and the training-label signal cannot credit them
+    new = np.where(d["X_train"].std(axis=0) == 0)[0]
     nearest = []
     if len(X) > 1:
         dist = np.linalg.norm(X[:, None] - X[None], axis=2)
@@ -191,6 +196,8 @@ def explain_seed(dataset, d, seed):
             "stability_spearman": float(np.nanmean([s[0] for s in stability])),
             f"stability_top{K}_jaccard": float(np.mean([s[1] for s in stability])),
             "seconds_per_explanation": seconds,
+            "weight_on_new_templates": float(np.abs(e)[:, new].sum() / np.abs(e).sum()),
+            f"new_templates_in_top{K}": len(top_k(importance) & set(new)),
         }
         explanations[name] = e
     return out, dict(xhad=xhad, hits=hits, X=X, scores=scores, shap=explanations["SHAP"])
